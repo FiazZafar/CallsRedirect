@@ -19,6 +19,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.registerReceiver
@@ -27,7 +28,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.google.gson.Gson
-import com.sahiwal.callsredirect.BroadCast.PhoneStateReceiver
 import com.sahiwal.callsredirect.HelperClasses.MillisWebSocketClient
 import com.sahiwal.callsredirect.R
 import kotlinx.coroutines.CoroutineScope
@@ -51,40 +51,26 @@ class HomeFragment : Fragment() {
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT // 16-bit PCM
     private val bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
     private var isRecording = false
-
-
-    private lateinit var phoneStateReceiver: PhoneStateReceiver
-
     // Buffer to store recorded audio data
     private val audioBuffer = ByteArrayOutputStream()
-
     // Coroutine scope for background tasks
     private val scope = CoroutineScope(Dispatchers.IO)
-
-
-
     // LiveData for UI updates
     private val _agentStatus = MutableLiveData<String>()
     val agentStatus: LiveData<String> get() = _agentStatus
 
+
     companion object {
         private const val REQUEST_CODE_RECORD_AUDIO = 1
-        private const val REQUEST_CODE_READ_PHONE_STATE = 2
     }
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_home, container, false)
-        checkPhoneStatePermission()
-
         // Initialize views
         agentStatusText = view.findViewById(R.id.agentStatusText)
         micBtn = view.findViewById(R.id.micBtn)
-
-
-        val filter = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
-        registerReceiver(phoneStateReceiver, filter)
 
 
         // Set click listener for micBtn
@@ -113,28 +99,6 @@ class HomeFragment : Fragment() {
 
         return view
     }
-
-
-    private fun checkPhoneStatePermission() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.READ_PHONE_STATE
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // Request the permission
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(Manifest.permission.READ_PHONE_STATE),
-                REQUEST_CODE_READ_PHONE_STATE
-            )
-        } else {
-            // Permission already granted
-            Log.d("CALLTAG", "READ_PHONE_STATE permission already granted")
-        }
-    }
-
-
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         // Observe LiveData for UI updates
@@ -264,30 +228,12 @@ class HomeFragment : Fragment() {
         when (requestCode) {
             REQUEST_CODE_RECORD_AUDIO -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission granted, start recording
-                    Log.d("CALLTAG", "RECORD_AUDIO permission granted")
                     startRecording()
                 } else {
-                    // Permission denied, show a message to the user
-                    Log.d("CALLTAG", "RECORD_AUDIO permission denied")
                     updateAgentStatus("Permission denied: RECORD_AUDIO")
                 }
             }
-            REQUEST_CODE_READ_PHONE_STATE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission granted
-                    Log.d("CALLTAG", "READ_PHONE_STATE permission granted")
-                } else {
-                    // Permission denied, show a message to the user
-                    Log.d("CALLTAG", "READ_PHONE_STATE permission denied")
-                    updateAgentStatus("Permission denied: READ_PHONE_STATE")
-                }
-            }
-            else -> {
-                // Handle other permission requests if needed
-                Log.d("CALLTAG", "Unknown permission request code: $requestCode")
-            }
         }
-    }
 
+}
 }

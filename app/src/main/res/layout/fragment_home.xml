@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E2E1E1"
+    android:background="@color/white"
     tools:context=".fragments.HomeFragment">
 
 
@@ -20,28 +20,33 @@
         <LinearLayout
             android:id="@+id/linearLayout"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="32dp"
+            android:layout_height="150dp"
+            android:layout_marginTop="16dp"
+            android:background="@color/white"
             android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
+
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="4dp"
+                android:layout_height="140dp"
+                android:layout_marginStart="16dp"
+                android:layout_gravity="center"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
+                android:minHeight="70dp"
+                app:cardBackgroundColor="@color/white"
                 app:cardCornerRadius="10dp"
-                app:cardElevation="1dp">
+                app:cardElevation="5dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_margin="16dp"
                     android:layout_weight="1"
+                    android:layout_marginHorizontal="16dp"
                     android:orientation="vertical"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -49,10 +54,9 @@
                     app:layout_constraintTop_toTopOf="parent">
 
                     <TextView
-                        android:id="@+id/processedCallsText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingVertical="8dp"
+
                         android:text="0"
                         android:textColor="@color/black"
                         android:textSize="18sp"
@@ -61,28 +65,29 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
-                        android:paddingBottom="8dp"
                         android:text="Apeluri Procesate"
-                        android:textColor="@color/black"
+                        android:textColor="@color/gray"
                         android:textSize="16sp" />
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
-
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="4dp"
+                android:layout_height="140dp"
+                android:layout_marginStart="8dp"
+                android:layout_gravity="center"
+                android:layout_marginEnd="16dp"
                 android:layout_weight="1"
+                android:minHeight="70dp"
                 app:cardBackgroundColor="@color/white"
                 app:cardCornerRadius="10dp"
-                app:cardElevation="1dp">
+                app:cardElevation="5dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_margin="8dp"
+                    android:layout_marginHorizontal="16dp"
                     android:layout_weight="1"
                     android:orientation="vertical"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -91,10 +96,8 @@
                     app:layout_constraintTop_toTopOf="parent">
 
                     <TextView
-                        android:id="@+id/averageResponseTimeText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingVertical="8dp"
                         android:text="0 ms"
                         android:textColor="@color/black"
                         android:textSize="18sp"
@@ -105,7 +108,7 @@
                         android:layout_height="match_parent"
                         android:paddingBottom="8dp"
                         android:text="Timp Mediu Răspuns"
-                        android:textColor="@color/black"
+                        android:textColor="@color/gray"
                         android:textSize="16sp" />
                 </LinearLayout>
 
@@ -116,7 +119,7 @@
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginVertical="32dp">
+            android:paddingVertical="8dp">
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
@@ -124,6 +127,7 @@
                 android:minHeight="400dp"
                 android:layout_marginHorizontal="16dp"
                 app:cardCornerRadius="10dp"
+                android:layout_marginTop="16dp"
                 app:cardElevation="5dp">
 
             <LinearLayout
@@ -156,7 +160,7 @@
                         android:id="@+id/micBtn"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="32dp"
+                        android:layout_marginTop="48dp"
                         android:background="@drawable/micro_phone_bg"
                         android:padding="32dp"
                         android:src="@drawable/microphone"
