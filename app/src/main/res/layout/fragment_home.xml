@@ -158,6 +158,18 @@
                     android:layout_weight="1.80"
                     android:padding="5dp">
 
+                    <TextView
+                        android:id="@+id/stopstartTxt"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="8dp"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/red"
+                        android:textAlignment="center"
+                        app:layout_constraintBottom_toTopOf="@+id/micBtn"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
                     <ImageView
                         android:id="@+id/micBtn"
                         android:layout_width="wrap_content"

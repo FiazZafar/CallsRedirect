@@ -21,7 +21,7 @@ class MillisWebSocketClient(
     private lateinit var webSocket: WebSocket
     var isWebSocketConnected = false
     var isAgentSpeaking = false // Flag to track if the agent is speaking
-
+    private var packetCounter = 0 // Packet counter for keep-alive
     // Timeout mechanism
     private val connectionTimeout = 10000L // 10 seconds
     private val timeoutRunnable = Runnable {
@@ -34,7 +34,7 @@ class MillisWebSocketClient(
 
     fun connect() {
         val client = OkHttpClient.Builder()
-            .pingInterval(30, TimeUnit.SECONDS) // Set a reasonable ping interval
+            .pingInterval(0, TimeUnit.SECONDS) // Set a reasonable ping interval
             .build()
 
         val request = Request.Builder()
@@ -134,10 +134,23 @@ class MillisWebSocketClient(
         }
     }
 
-    // Function to send audio data
     fun sendAudioPacket(audioData: ByteArray) {
-        if (isWebSocketConnected && !isAgentSpeaking) { // Ignore if agent is speaking
-            webSocket.send(ByteString.of(*audioData))
+        if (!isWebSocketConnected) {
+            Log.e("MYTAG", "WebSocket is not connected")
+            return
+        }
+
+        // Send audio data as a binary message
+        webSocket.send(ByteString.of(*audioData))
+        Log.d("MYTAG", "Audio packet sent: ${audioData.size} bytes")
+
+        // Send a ping message every 1000 packets
+        packetCounter++
+        if (packetCounter % 1000 == 0) {
+            val pingMessage = mapOf("method" to "ping")
+            val jsonMessage = gson.toJson(pingMessage)
+            webSocket.send(jsonMessage)
+            Log.d("MYTAG", "Ping message sent")
         }
     }
 

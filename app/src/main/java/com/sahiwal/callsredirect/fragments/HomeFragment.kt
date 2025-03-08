@@ -33,6 +33,7 @@ import java.io.ByteArrayOutputStream
 
 class HomeFragment : Fragment() {
 
+    private lateinit var stopstartTxt: TextView
     private lateinit var agentStatusWrongText: TextView
     private lateinit var agentStatusCorrectText: TextView
     private lateinit var micBtn: ImageView
@@ -79,6 +80,7 @@ class HomeFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_home, container, false)
 
         // Initialize views
+        stopstartTxt = view.findViewById(R.id.stopstartTxt)
         agentStatusWrongText = view.findViewById(R.id.invalidCredentials)
         agentStatusCorrectText = view.findViewById(R.id.correctCredentialTxt)
         micBtn = view.findViewById(R.id.micBtn)
@@ -102,10 +104,12 @@ class HomeFragment : Fragment() {
         micBtn.setOnClickListener {
             if (isRecording) {
                 stopRecording()
+                stopstartTxt.setText("Off")
             } else {
                 if (webSocketClient.isWebSocketConnected) {
                     // Start the conversation
                     webSocketClient.startConversation()
+                    stopstartTxt.setText("On")
                     startRecording()
                 } else {
                     updateConnectionUI(false, "Connection not established. Please check your credentials.")
@@ -168,7 +172,7 @@ class HomeFragment : Fragment() {
     private fun startRecording() {
         // Check for RECORD_AUDIO permission
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.RECORD_AUDIO), 1)
+            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_CODE_RECORD_AUDIO)
             return
         }
 
@@ -193,9 +197,11 @@ class HomeFragment : Fragment() {
                     val buffer = ByteArray(bufferSize)
                     while (isRecording) {
                         val bytesRead = audioRecord?.read(buffer, 0, bufferSize) ?: 0
-                        if (bytesRead > 0 && !webSocketClient.isAgentSpeaking) { // Ignore if agent is speaking
+                        if (bytesRead > 0 && !webSocketClient.isAgentSpeaking) {
                             Log.d("MYTAG", "Sending audio data: $bytesRead bytes")
                             webSocketClient.sendAudioPacket(buffer.sliceArray(0 until bytesRead))
+                        } else if (bytesRead <= 0) {
+                            Log.e("MYTAG", "No audio data read from AudioRecord")
                         }
                     }
                 }
@@ -208,6 +214,7 @@ class HomeFragment : Fragment() {
             updateAgentStatus("Recording failed: ${e.message}")
         }
     }
+
     private fun stopRecording() {
         // Stop recording
         isRecording = false
@@ -279,7 +286,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun stopAudioPlayback() {
+     fun stopAudioPlayback() {
         audioTrack?.stop() // Stop playback
         audioTrack?.release() // Release resources
         audioTrack = null
