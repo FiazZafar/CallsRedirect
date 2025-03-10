@@ -12,7 +12,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 
-
 class SettingFragment : Fragment() {
 
     private lateinit var editTextAgentId: EditText
@@ -48,10 +47,9 @@ class SettingFragment : Fragment() {
         val savedPublicKey = sharedPreferences.getString("publicKey", "")
         val savedServerUrl = sharedPreferences.getString("serverUrl", "")
 
-//        editTextAgentId.setText(savedAgentId)
-//        editTextPublicKey.setText(savedPublicKey)
-//        editTextServerUrl.setText(savedServerUrl)
-        editTextServerUrl.setHint(savedServerUrl)
+        editTextAgentId.setText(savedAgentId)
+        editTextPublicKey.setText(savedPublicKey)
+        editTextServerUrl.setText(savedServerUrl)
 
         saveSettingBtn.setOnClickListener {
             val agentId = editTextAgentId.text.toString()
@@ -59,17 +57,17 @@ class SettingFragment : Fragment() {
             val serverUrl = editTextServerUrl.text.toString()
 
             if (agentId.isEmpty() || publicKey.isEmpty() || serverUrl.isEmpty()) {
-                Toast.makeText(requireContext(),"Configuration missing. Please check settings.",Toast.LENGTH_SHORT).show()
-            }else {
+                Toast.makeText(requireContext(), "Configuration missing. Please check settings.", Toast.LENGTH_SHORT).show()
+            } else {
                 // Save to SharedPreferences
                 val editor = sharedPreferences.edit()
                 editor.putString("agentId", agentId)
                 editor.putString("publicKey", publicKey)
                 editor.putString("serverUrl", serverUrl)
                 editor.apply()
+
+                Toast.makeText(requireContext(), "Settings Saved!", Toast.LENGTH_SHORT).show()
             }
-            // Optionally, you can show a toast or a snackbar to confirm the save
-             Toast.makeText(requireContext(), "Settings Saved!", Toast.LENGTH_SHORT).show()
         }
     }
 }
