@@ -29,14 +29,11 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class VoIPService : Service() {
-
     private lateinit var webRTCManager: WebRTCManager
-
-    private val agentId: String = "-OKdqbqetEcM4ak369ym" // Replace with your agent ID
-    private val privateKey: String = "rD8eCUYWybH2OTrpzRbZCJQOF6ARbj6L" // Replace with your private key
+    private val agentId: String = "-OKvLcAI_PHjlKHYklH3" // Replace with your agent ID
+    private val privateKey: String = "z4oHP32NBmepHfRUaJGdOX5PQS4JTHZI" // Replace with your private key
     private lateinit var millisApiService: MillisAIApi
-
-    private val coroutineScope = CoroutineScope(Dispatchers.Main) // Use Dispatchers.IO for background tasks
+    private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate() {
         super.onCreate()
@@ -47,6 +44,7 @@ class VoIPService : Service() {
             privateKey = privateKey,
             agentId = agentId
         )
+        webRTCManager.initializeWebRTC()
         createNotificationChannel()
         startForeground(1, createNotification())
     }
@@ -61,7 +59,6 @@ class VoIPService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Handle incoming call
         val incomingCall = intent?.getBooleanExtra("incoming_call", false)
         if (incomingCall == true) {
             val observer = object : PeerConnection.Observer {
@@ -72,11 +69,9 @@ class VoIPService : Service() {
                             sdpMLineIndex = it.sdpMLineIndex,
                             candidate = it.sdp
                         )
-
-                        // Send the ICE candidate to MillisAI
                         coroutineScope.launch {
                             try {
-                                millisApiService.sendIceCandidate("Bearer $privateKey", payload).execute()
+                                millisApiService.sendIceCandidate("Bearer $privateKey", payload)
                                 Log.d("MYTAG", "ICE candidate sent successfully")
                             } catch (e: Exception) {
                                 Log.e("MYTAG", "Failed to send ICE candidate: ${e.message}")
@@ -99,6 +94,7 @@ class VoIPService : Service() {
 
             webRTCManager.createPeerConnection(observer)
             webRTCManager.createAndSendOffer()
+            webRTCManager.startAudioCapture()
         }
         return START_STICKY
     }
@@ -126,7 +122,7 @@ class VoIPService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         webRTCManager.close()
-        coroutineScope.cancel() // Cancel the coroutine scope when the service is destroyed
+        coroutineScope.cancel()
     }
 
     override fun onBind(intent: Intent?): IBinder? {

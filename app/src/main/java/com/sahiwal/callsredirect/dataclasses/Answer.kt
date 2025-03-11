@@ -4,4 +4,3 @@ data class Answer(
     val sdp: String,
     val type: String
 )
-

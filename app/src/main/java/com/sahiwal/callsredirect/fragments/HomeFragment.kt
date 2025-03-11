@@ -15,7 +15,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.fiver.clientapp.dataclasses.IceCandidatePayload
@@ -33,10 +32,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
-
 class HomeFragment : Fragment() {
 
     private lateinit var micBtn: ImageView
@@ -53,6 +52,8 @@ class HomeFragment : Fragment() {
     private var callStartTime: Long = 0
     private var isRecording = false
     private var audioRecord: AudioRecord? = null
+
+    val baseUrl = "https://api-west.millis.ai"
 
     companion object {
         private const val SAMPLE_RATE = 44100
@@ -83,7 +84,7 @@ class HomeFragment : Fragment() {
     private fun initializeRetrofit() {
         Log.d("HomeFragment", "Initializing Retrofit...")
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://api-west.millis.ai/")
+            .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
@@ -92,6 +93,11 @@ class HomeFragment : Fragment() {
     }
 
     private fun startProcess() {
+        if (!hasAudioPermission()) {
+            requestAudioPermission()
+            return
+        }
+
         Log.d("HomeFragment", "Starting WebRTC process...")
         webRTCManager = WebRTCManager(requireContext(), millisApiService, "z4oHP32NBmepHfRUaJGdOX5PQS4JTHZI", "-OKvLcAI_PHjlKHYklH3").apply {
             initializeWebRTC()
@@ -99,6 +105,7 @@ class HomeFragment : Fragment() {
             createAndSendOffer()
         }
 
+        callStartTime = System.currentTimeMillis()
         startCallDurationTimer()
         startRecording()
     }
@@ -110,7 +117,8 @@ class HomeFragment : Fragment() {
 
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
-                        millisApiService.sendIceCandidate("Bearer ${sharedPreferences.getString("publicKey", "")}", payload).execute()
+                        // No need to call execute() on a suspend function
+                        millisApiService.sendIceCandidate("Bearer ${sharedPreferences.getString("publicKey", "")}", payload)
                         Log.d("WebRTC", "ICE candidate sent successfully")
                     } catch (e: Exception) {
                         Log.e("WebRTC", "Failed to send ICE candidate: ${e.message}")
@@ -122,7 +130,28 @@ class HomeFragment : Fragment() {
         override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
         override fun onAddStream(stream: MediaStream?) {}
         override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
-        override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {}
+        override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
+            activity?.runOnUiThread {
+                when (state) {
+                    PeerConnection.IceConnectionState.CONNECTED -> {
+                        val latency = System.currentTimeMillis() - (webRTCManager?.offerSentTime ?: 0)
+                        webRTCManager?.latencyList?.add(latency)
+
+                        val avgLatency = webRTCManager?.latencyList?.average()?.toLong() ?: 0
+                        latencyRate.text = "$avgLatency ms"
+
+                        connected.visibility = View.VISIBLE
+                        disconnected.visibility = View.GONE
+                    }
+                    PeerConnection.IceConnectionState.DISCONNECTED -> {
+                        connected.visibility = View.GONE
+                        disconnected.visibility = View.VISIBLE
+                    }
+                    else -> {}
+                }
+            }
+        }
+
         override fun onIceConnectionReceivingChange(receiving: Boolean) {}
         override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {}
         override fun onRemoveStream(stream: MediaStream?) {}
@@ -136,7 +165,7 @@ class HomeFragment : Fragment() {
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed(object : Runnable {
             override fun run() {
-                callDurationTxt.text = "${(System.currentTimeMillis() - callStartTime) / 1000}"
+                callDurationTxt.text = "${(System.currentTimeMillis() - callStartTime) / 1000} seconds"
                 if (isRecording) handler.postDelayed(this, 1000)
             }
         }, 1000)
@@ -148,30 +177,47 @@ class HomeFragment : Fragment() {
             Log.e("HomeFragment", "Microphone permission is missing!")
             return
         }
-        val bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
 
+        val bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         audioRecord = AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize)
+
         isRecording = true
         audioRecord?.startRecording()
-        stopStartTxt.text = "Recording..."
+        stopStartTxt.text = "Call Started..."
 
         lifecycleScope.launch(Dispatchers.IO) {
             val buffer = ByteArray(bufferSize)
             while (isRecording) {
                 val bytesRead = audioRecord?.read(buffer, 0, buffer.size) ?: 0
-                if (bytesRead > 0) webRTCManager?.sendAudioData(buffer)
+                if (bytesRead > 0) {
+                    // WebRTC automatically handles audio streaming, so no need to manually send audio data
+                }
             }
         }
     }
 
     private fun stopRecording() {
-        Log.d("HomeFragment", "Stopping audio recording...")
+        Log.d("HomeFragment", "Stopping audio recording and WebRTC call...")
+
         isRecording = false
+
+        // Stop and release AudioRecord
         audioRecord?.stop()
         audioRecord?.release()
         audioRecord = null
-        stopStartTxt.text = "Click to start recording"
+
+        // Stop WebRTC connection
+        webRTCManager?.close()
+        webRTCManager = null  // Ensure WebRTCManager is reset
+
+        // Reset UI elements
+        stopStartTxt.text = "Click to start Call"
+//        connected.visibility = View.GONE
+//        disconnected.visibility = View.VISIBLE
+
+        Log.d("HomeFragment", "Call stopped successfully.")
     }
+
 
     private fun hasAudioPermission(): Boolean {
         return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
@@ -179,6 +225,15 @@ class HomeFragment : Fragment() {
 
     private fun requestAudioPermission() {
         ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.RECORD_AUDIO), PERMISSION_REQUEST_CODE)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startProcess()
+        } else {
+            Toast.makeText(requireContext(), "Microphone permission is required to record audio", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onDestroy() {

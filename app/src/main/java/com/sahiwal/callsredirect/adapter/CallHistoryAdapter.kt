@@ -8,10 +8,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.fiver.clientapp.dataclasses.CallHistory
 import com.sahiwal.callsredirect.R
 
-
 class CallHistoryAdapter(private val callHistoryList: List<CallHistory>) :
     RecyclerView.Adapter<CallHistoryAdapter.CallHistoryViewHolder>() {
 
+    // ViewHolder class
     class CallHistoryViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvDate: TextView = view.findViewById(R.id.tv_date)
         val tvDuration: TextView = view.findViewById(R.id.tv_duration)
@@ -20,12 +20,14 @@ class CallHistoryAdapter(private val callHistoryList: List<CallHistory>) :
         val tvStatus: TextView = view.findViewById(R.id.tv_status)
     }
 
+    // Create new views (invoked by the layout manager)
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CallHistoryViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.history_list, parent, false)
         return CallHistoryViewHolder(view)
     }
 
+    // Replace the contents of a view (invoked by the layout manager)
     override fun onBindViewHolder(holder: CallHistoryViewHolder, position: Int) {
         val item = callHistoryList[position]
         holder.tvDate.text = item.date
@@ -35,5 +37,6 @@ class CallHistoryAdapter(private val callHistoryList: List<CallHistory>) :
         holder.tvStatus.text = item.status
     }
 
+    // Return the size of the dataset (invoked by the layout manager)
     override fun getItemCount(): Int = callHistoryList.size
 }

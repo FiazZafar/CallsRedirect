@@ -24,82 +24,94 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-        <ScrollView
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:fillViewport="true"
+        android:layout_marginTop="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView4"
+        >
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/textView4">
+            android:orientation="vertical">
 
-
-            <HorizontalScrollView
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@color/white"
-                android:fillViewport="true"
-                android:layout_marginTop="16dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
-                <LinearLayout
-                    android:layout_width="match_parent"
+                android:orientation="horizontal"
+
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="100dp"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="8dp">
+                    android:padding="8dp"
+                    android:text="Date"
+                    android:textColor="@color/black"
+                    android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="100dp"
-                            android:layout_height="wrap_content"
-                            android:padding="8dp"
-                            android:text="Date"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:text="Duration"
+                    android:textColor="@color/black"
+                    android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="100dp"
-                            android:layout_height="wrap_content"
-                            android:padding="8dp"
-                            android:text="Duration"
-                            android:textStyle="bold"
-                            android:textColor="@color/black"
-                            />
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:text="Durata"
+                    android:textColor="@color/black"
+                    android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="100dp"
-                            android:layout_height="wrap_content"
-                            android:padding="8dp"
-                            android:text="Durata"
-                            android:textStyle="bold"
-                            android:textColor="@color/black"
-                            />
+                <TextView
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:text="Timestamp"
+                    android:textColor="@color/black"
+                    android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="150dp"
-                            android:layout_height="wrap_content"
-                            android:padding="8dp"
-                            android:text="Timestamp"
-                            android:textStyle="bold"
-                            android:textColor="@color/black"
-                            />
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:text="Status"
+                    android:textColor="@color/black"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-                        <TextView
-                            android:layout_width="100dp"
-                            android:layout_height="wrap_content"
-                            android:padding="8dp"
-                            android:text="Status"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <!-- RecyclerView for Dynamic Data -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="8dp" />
+            </ScrollView>
 
-                    <!-- RecyclerView for Dynamic Data -->
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/recyclerView"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:padding="8dp" />
-                </LinearLayout>
-            </HorizontalScrollView>
-        </ScrollView>
+        </LinearLayout>
+
+    </HorizontalScrollView>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
