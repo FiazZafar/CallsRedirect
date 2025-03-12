@@ -60,24 +60,20 @@ class CallHistoryFragment : Fragment() {
         val savedServerUrl = sharedPreferences.getString("serverUrl", "")
         // Initialize Retrofit
 
-        if (savedServerUrl.isNullOrEmpty()){
-            makeText(context,"please set your server url in setting...", LENGTH_SHORT).show()
-        }else if (savedServerUrl.endsWith("/")){
-            initializeRetrofit(savedServerUrl)
-        }else{
-            makeText(context,"Invalid Url...", LENGTH_SHORT).show()
-        }
+//        if (savedServerUrl.isNullOrEmpty()){
+//            makeText(context,"please set your server url in setting...", LENGTH_SHORT).show()
+//        }else if (savedServerUrl.endsWith("/")){
+            initializeRetrofit("https://api-west.millis.ai")
+//        }else{
+//            makeText(context,"Invalid Url...", LENGTH_SHORT).show()
+//        }
 
         // Initialize adapter with an empty list
         adapter = CallHistoryAdapter(emptyList())
         recyclerView.adapter = adapter
 
-        if (savedAgentId.isNullOrEmpty() || savedPrivateKey.isNullOrEmpty() || savedServerUrl.isNullOrEmpty()){
-            Toast.makeText(context,"please set your Credentials in setting...",Toast.LENGTH_SHORT).show()
-        }else{
             // Fetch data from the API
-            getData(savedAgentId,savedPrivateKey)
-        }
+            getData("-OKvLcAI_PHjlKHYklH3","z4oHP32NBmepHfRUaJGdOX5PQS4JTHZI")
 
         return view
     }

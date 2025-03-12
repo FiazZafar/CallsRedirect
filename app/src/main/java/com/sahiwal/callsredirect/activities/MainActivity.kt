@@ -12,7 +12,10 @@ import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -74,29 +77,57 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                // Permissions granted, proceed with app logic
+            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 Log.d("MainActivity", "All permissions granted")
             } else {
-                // Permissions denied, show a message or disable functionality
-                showPermissionExplanation()
-                Log.e("MainActivity", "Permissions denied")
-                Toast.makeText(this, "Permissions are required for the app to function properly.", Toast.LENGTH_LONG).show()
+                val permanentlyDenied = permissions.any {
+                    !ActivityCompat.shouldShowRequestPermissionRationale(this, it)
+                }
+
+                if (permanentlyDenied) {
+//                    showSettingsDialog()
+                } else {
+                    // Ensure the dialog is not called repeatedly
+                    if (!hasPermissions()) {
+                        showPermissionExplanation()
+                    }
+                }
             }
         }
     }
+
+//    private fun showSettingsDialog() {
+//        AlertDialog.Builder(this)
+//            .setTitle("Permissions Required")
+//            .setMessage("You have denied some permissions permanently. Please enable them in settings to use this feature.")
+//            .setPositiveButton("Go to Settings") { _, _ ->
+//                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+//                val uri = Uri.fromParts("package", packageName, null)
+//                intent.data = uri
+//                startActivity(intent)
+//            }
+//            .setNegativeButton("Cancel") { dialog, _ ->
+//                dialog.dismiss()
+//            }
+//            .show()
+//    }
+
     private fun showPermissionExplanation() {
         AlertDialog.Builder(this)
             .setTitle("Permissions Required")
             .setMessage("This app needs phone and audio permissions to detect and answer calls.")
             .setPositiveButton("OK") { _, _ ->
-                ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
+                // Do not request permissions here, just show the dialog
             }
             .setNegativeButton("Cancel") { dialog, _ ->
                 dialog.dismiss()
             }
             .show()
+
+        // Request permissions only after the dialog is dismissed
+        ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
     }
+
     // Set up BottomNavigationView item selection
     private fun setupBottomNavigation() {
         bottomNavigationView.setOnNavigationItemSelectedListener { item ->

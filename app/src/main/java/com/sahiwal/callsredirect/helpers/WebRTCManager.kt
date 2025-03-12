@@ -1,7 +1,7 @@
-
 package com.sahiwal.callsredirect.helpers
 
 import android.Manifest
+
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioFormat
@@ -12,12 +12,12 @@ import androidx.core.app.ActivityCompat
 import com.fiver.clientapp.dataclasses.IceCandidatePayload
 import com.fiver.clientapp.fragments.Offer
 import com.fiver.clientapp.fragments.OfferRequest
+import com.sahiwal.callsredirect.helpers.WebRTCMode
 import com.sahiwal.callsredirect.interfaces.MillisAIApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.webrtc.*
-import org.webrtc.AudioTrack
 
 class WebRTCManager(
     private val context: Context,
@@ -29,18 +29,16 @@ class WebRTCManager(
     private var peerConnection: PeerConnection? = null
     private lateinit var audioSource: AudioSource
     private lateinit var localAudioTrack: AudioTrack
-    private var audioRecord: AudioRecord? = null
     private var isRecording = false
-
-    public var offerSentTime: Long = 0
+    private var offerSentTime: Long = 0
     val latencyList = mutableListOf<Long>()
 
-    // Initialize WebRTC
+    private var onIncomingCallListener: ((SessionDescription) -> Unit)? = null
+
     fun initializeWebRTC() {
         Log.d("WebRTCManager", "Initializing WebRTC...")
         PeerConnectionFactory.initialize(
-            PeerConnectionFactory.InitializationOptions.builder(context)
-                .createInitializationOptions()
+            PeerConnectionFactory.InitializationOptions.builder(context).createInitializationOptions()
         )
 
         peerConnectionFactory = PeerConnectionFactory.builder()
@@ -53,7 +51,6 @@ class WebRTCManager(
         Log.d("WebRTCManager", "WebRTC initialized successfully")
     }
 
-    // Create a PeerConnection
     fun createPeerConnection(observer: PeerConnection.Observer) {
         Log.d("WebRTCManager", "Creating PeerConnection...")
         val iceServers = listOf(
@@ -64,13 +61,79 @@ class WebRTCManager(
             addTrack(localAudioTrack, listOf("media_stream"))
             Log.d("WebRTCManager", "Local audio track added to PeerConnection")
         }
-
-        Log.d("WebRTCManager", "PeerConnection initialized")
     }
 
-    // Start audio capture
+    fun setOnIncomingCallListener(listener: (SessionDescription) -> Unit) {
+        this.onIncomingCallListener = listener
+    }
+
+    fun createAndSendAnswer(sessionDescription: SessionDescription, currentMode: WebRTCMode) {
+        Log.d("WebRTCManager", "Creating and sending answer...")
+
+        peerConnection?.setRemoteDescription(object : SdpObserver {
+            override fun onSetSuccess() {
+                peerConnection?.createAnswer(object : SdpObserver {
+                    override fun onCreateSuccess(answer: SessionDescription) {
+                        peerConnection?.setLocalDescription(object : SdpObserver {
+                            override fun onSetSuccess() {
+                                sendAnswerToMillis(answer, currentMode)
+                                Log.d("WebRTCManager", "Answer created and sent successfully")
+                            }
+
+                            override fun onSetFailure(error: String?) {
+                                Log.e("WebRTCManager", "Failed to set local description: $error")
+                            }
+
+                            override fun onCreateSuccess(session: SessionDescription?) {}
+                            override fun onCreateFailure(error: String?) {}
+                        }, answer)
+                    }
+
+                    override fun onCreateFailure(error: String?) {
+                        Log.e("WebRTCManager", "Failed to create answer: $error")
+                    }
+
+                    override fun onSetSuccess() {}
+                    override fun onSetFailure(error: String?) {}
+                }, MediaConstraints())
+            }
+
+            override fun onSetFailure(error: String?) {
+                Log.e("WebRTCManager", "Failed to set remote description: $error")
+            }
+
+            override fun onCreateSuccess(session: SessionDescription?) {}
+            override fun onCreateFailure(error: String?) {}
+        }, sessionDescription)
+    }
+
+    private fun sendAnswerToMillis(answer: SessionDescription, currentMode: WebRTCMode) {
+        val request = OfferRequest(
+            agent_id = agentId,
+            offer = Offer(
+                sdp = answer.description,
+                type = answer.type.canonicalForm()
+            )
+        )
+        val authToken = "$privateKey"
+        Log.d("WebRTCManager", "Sending answer with authToken: $authToken")
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = millisApiService.sendOffer(authToken, request)
+                if (response.isSuccessful) {
+                    Log.d("WebRTCManager", "Answer successfully sent")
+                } else {
+                    Log.e("WebRTCManager", "Failed to send answer: ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                Log.e("WebRTCManager", "Error sending answer: ${e.message}", e)
+            }
+        }
+    }
+
     fun startAudioCapture() {
-        if (audioRecord != null && isRecording) {
+        if (isRecording) {
             Log.d("WebRTCManager", "Audio capture already running")
             return
         }
@@ -80,133 +143,15 @@ class WebRTCManager(
             return
         }
 
-        val sampleRate = 44100
-        val bufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-
-        audioRecord = AudioRecord(
-            MediaRecorder.AudioSource.MIC,
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            bufferSize
-        )
-
         isRecording = true
-        audioRecord?.startRecording()
         Log.d("WebRTCManager", "Audio capture started")
-
-        CoroutineScope(Dispatchers.IO).launch {
-            val audioData = ByteArray(bufferSize)
-            while (isRecording) {
-                val bytesRead = audioRecord?.read(audioData, 0, audioData.size) ?: 0
-                if (bytesRead > 0) {
-                    // WebRTC automatically handles audio streaming, so no need to manually send audio data
-                }
-            }
-        }
     }
 
-    // Stop audio capture
     fun stopAudioCapture() {
         isRecording = false
-        audioRecord?.stop()
-        audioRecord?.release()
-        audioRecord = null
         Log.d("WebRTCManager", "Audio capture stopped")
     }
 
-    // Create and send an offer to MillisAI
-    fun createAndSendOffer(currentMode: WebRTCMode) {
-        Log.d("WebRTCManager", "Creating and sending offer...")
-        peerConnection?.createOffer(object : SdpObserver {
-            override fun onCreateSuccess(sessionDescription: SessionDescription) {
-                Log.d("WebRTC", "SDP Offer: ${sessionDescription.description}")
-                peerConnection?.setLocalDescription(object : SdpObserver {
-                    override fun onSetSuccess() {
-                        if (currentMode == WebRTCMode.TEST_AGENT) {
-                            sendOfferToMillis(sessionDescription, "TestAgent")
-                        } else {
-                            sendOfferToMillis(sessionDescription, "CallRedirect")
-                        }
-                        Log.d("WebRTCManager", "Offer created and local description set")
-                    }
-
-                    override fun onSetFailure(p0: String?) {
-                        Log.e("WebRTCManager", "Failed to set local description: $p0")
-                    }
-                    override fun onCreateSuccess(p0: SessionDescription?) {}
-                    override fun onCreateFailure(p0: String?) {}
-                }, sessionDescription)
-            }
-
-            override fun onSetFailure(p0: String?) {
-                Log.e("WebRTCManager", "Failed to create offer: $p0")
-            }
-            override fun onSetSuccess() {}
-            override fun onCreateFailure(p0: String?) {
-                Log.e("WebRTCManager", "Failed to create offer: $p0")
-            }
-        }, MediaConstraints())
-    }
-
-    // Send the offer to MillisAI
-    private fun sendOfferToMillis(offer: SessionDescription, requestType: String) {
-        offerSentTime = System.currentTimeMillis()
-        val request = OfferRequest(
-            agent_id = agentId,
-            offer = Offer(
-                sdp = offer.description,
-                type = offer.type.canonicalForm()
-            )
-        )
-        val authToken = "$privateKey"
-        Log.d("WebRTCManager", "Sending offer for $requestType with authToken: $authToken")
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = millisApiService.sendOffer(authToken, request)
-                Log.d("WebRTCManager", "Sending Request")
-
-                if (response.isSuccessful) {
-                    Log.d("WebRTCManager", "Checking Response")
-                    val answerResponse = response.body()?.answer
-                    if (answerResponse != null) {
-                        latencyList.add(System.currentTimeMillis() - offerSentTime)
-                        val answerSDP = answerResponse.sdp
-                        handleAnswer(SessionDescription(SessionDescription.Type.ANSWER, answerSDP))
-                        Log.d("WebRTCManager", "Offer sent and answer received successfully")
-                    } else {
-                        Log.e("WebRTCManager", "Response body or answer is null")
-                    }
-                } else {
-                    Log.e("WebRTCManager", "Failed to send offer: ${response.errorBody()?.string()}")
-                }
-            } catch (e: Exception) {
-                Log.e("WebRTCManager", "Failed to send offer: ${e.message}", e)
-            }
-        }
-    }
-
-    // Handle the answer from MillisAI
-    private fun handleAnswer(answer: SessionDescription) {
-        Log.d("WebRTCManager", "Handling answer...")
-        peerConnection?.setRemoteDescription(object : SdpObserver {
-            override fun onSetSuccess() {
-                Log.d("WebRTCManager", "Remote description set successfully")
-            }
-            override fun onSetFailure(p0: String?) {
-                Log.e("WebRTCManager", "Failed to set remote description: $p0")
-            }
-            override fun onCreateSuccess(p0: SessionDescription?) {}
-            override fun onCreateFailure(p0: String?) {}
-        }, answer)
-    }
-
-    // Handle ICE candidates
-    fun handleIceCandidate(candidate: IceCandidatePayload) {
-        Log.d("WebRTCManager", "Handling ICE candidate...")
-        peerConnection?.addIceCandidate(IceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.candidate))
-    }
-    // Clean up resources
     fun close() {
         Log.d("WebRTCManager", "Closing WebRTC manager...")
         stopAudioCapture()
