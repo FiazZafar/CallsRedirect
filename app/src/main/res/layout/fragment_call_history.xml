@@ -60,15 +60,16 @@
                     android:layout_width="100dp"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
-                    android:text="Duration"
+                    android:text="Durata"
                     android:textColor="@color/black"
                     android:textStyle="bold" />
+
 
                 <TextView
                     android:layout_width="100dp"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
-                    android:text="Durata"
+                    android:text="Status"
                     android:textColor="@color/black"
                     android:textStyle="bold" />
 
@@ -76,15 +77,7 @@
                     android:layout_width="150dp"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
-                    android:text="Timestamp"
-                    android:textColor="@color/black"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:padding="8dp"
-                    android:text="Status"
+                    android:text="Cost"
                     android:textColor="@color/black"
                     android:textStyle="bold" />
             </LinearLayout>

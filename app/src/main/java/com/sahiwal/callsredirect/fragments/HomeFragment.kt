@@ -35,6 +35,7 @@ import android.media.AudioRecord
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.sahiwal.callsredirect.helpers.WebRTCMode
 import kotlinx.coroutines.Dispatchers
 class HomeFragment : Fragment() {
 
@@ -53,6 +54,7 @@ class HomeFragment : Fragment() {
     private var isRecording = false
     private var audioRecord: AudioRecord? = null
 
+    private val currentMode = WebRTCMode.TEST_AGENT
     val baseUrl = "https://api-west.millis.ai"
 
     companion object {
@@ -99,11 +101,13 @@ class HomeFragment : Fragment() {
         }
 
         Log.d("HomeFragment", "Starting WebRTC process...")
-        webRTCManager = WebRTCManager(requireContext(), millisApiService, "z4oHP32NBmepHfRUaJGdOX5PQS4JTHZI", "-OKvLcAI_PHjlKHYklH3").apply {
-            initializeWebRTC()
-            createPeerConnection(peerConnectionObserver)
-            createAndSendOffer()
+        if (webRTCManager == null) {
+            webRTCManager = WebRTCManager(requireContext(), millisApiService, "z4oHP32NBmepHfRUaJGdOX5PQS4JTHZI", "-OKvLcAI_PHjlKHYklH3").apply {
+                initializeWebRTC()
+                createPeerConnection(peerConnectionObserver)
+            }
         }
+                webRTCManager?.createAndSendOffer(currentMode)
 
         callStartTime = System.currentTimeMillis()
         startCallDurationTimer()

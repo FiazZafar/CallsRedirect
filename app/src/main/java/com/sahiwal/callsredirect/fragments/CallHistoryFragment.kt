@@ -1,5 +1,8 @@
 package com.sahiwal.callsredirect.fragments
 
+import android.content.Context
+import android.content.SharedPreferences
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -7,6 +10,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
+import android.widget.Toast
+import android.widget.Toast.*
+import androidx.core.content.ContextCompat
 import androidx.core.view.isInvisible
 import androidx.lifecycle.lifecycleScope
 import com.sahiwal.callsredirect.R
@@ -19,6 +25,7 @@ import com.sahiwal.callsredirect.interfaces.MillisAIApi
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Url
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -28,8 +35,8 @@ class CallHistoryFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var loadHistory : ProgressBar
     private lateinit var adapter: CallHistoryAdapter
+    private lateinit var sharedPreferences: SharedPreferences
     private lateinit var millisApiService: MillisAIApi
-    private val privateKey = "z4oHP32NBmepHfRUaJGdOX5PQS4JTHZI" // Replace with your private key
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -41,31 +48,50 @@ class CallHistoryFragment : Fragment() {
         loadHistory = view.findViewById(R.id.progressBar)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
+        loadHistory.indeterminateDrawable.setColorFilter(
+            ContextCompat.getColor(requireContext(), R.color.black),
+            PorterDuff.Mode.SRC_IN
+        )
+        sharedPreferences = requireActivity().getSharedPreferences("MySettings", Context.MODE_PRIVATE)
+        // Load saved data
+        // Load saved data
+        val savedAgentId = sharedPreferences.getString("agentId", "")
+        val savedPrivateKey = sharedPreferences.getString("publicKey", "")
+        val savedServerUrl = sharedPreferences.getString("serverUrl", "")
         // Initialize Retrofit
-        initializeRetrofit()
+
+        if (savedServerUrl.isNullOrEmpty()){
+            makeText(context,"please set your server url in setting...", LENGTH_SHORT).show()
+        }else if (savedServerUrl.endsWith("/")){
+            initializeRetrofit(savedServerUrl)
+        }else{
+            makeText(context,"Invalid Url...", LENGTH_SHORT).show()
+        }
 
         // Initialize adapter with an empty list
         adapter = CallHistoryAdapter(emptyList())
         recyclerView.adapter = adapter
 
-        // Fetch data from the API
-        getData()
+        if (savedAgentId.isNullOrEmpty() || savedPrivateKey.isNullOrEmpty() || savedServerUrl.isNullOrEmpty()){
+            Toast.makeText(context,"please set your Credentials in setting...",Toast.LENGTH_SHORT).show()
+        }else{
+            // Fetch data from the API
+            getData(savedAgentId,savedPrivateKey)
+        }
 
         return view
     }
 
-    private fun initializeRetrofit() {
+    private fun initializeRetrofit(baseURL:String) {
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://api-west.millis.ai/")
+            .baseUrl(baseURL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
         millisApiService = retrofit.create(MillisAIApi::class.java)
     }
-    private fun getData() {
-        val agentId = "-OKvLcAI_PHjlKHYklH3" // Replace with actual agent_id
+    private fun getData(agentId : String , privateKey:String) {
         val authToken = privateKey  // If Bearer doesn't work, just use privateKey
-
         loadHistory.visibility = View.VISIBLE // Show ProgressBar before loading data
 
         lifecycleScope.launch {

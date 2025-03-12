@@ -11,6 +11,7 @@ import android.content.SharedPreferences
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 
 class SettingFragment : Fragment() {
 
@@ -47,9 +48,8 @@ class SettingFragment : Fragment() {
         val savedPublicKey = sharedPreferences.getString("publicKey", "")
         val savedServerUrl = sharedPreferences.getString("serverUrl", "")
 
-        editTextAgentId.setText(savedAgentId)
-        editTextPublicKey.setText(savedPublicKey)
-        editTextServerUrl.setText(savedServerUrl)
+//        editTextServerUrl.setHint(savedServerUrl)
+
 
         saveSettingBtn.setOnClickListener {
             val agentId = editTextAgentId.text.toString()
@@ -58,7 +58,7 @@ class SettingFragment : Fragment() {
 
             if (agentId.isEmpty() || publicKey.isEmpty() || serverUrl.isEmpty()) {
                 Toast.makeText(requireContext(), "Configuration missing. Please check settings.", Toast.LENGTH_SHORT).show()
-            } else {
+            } else if (serverUrl.equals("https://api-west.millis.ai/")){
                 // Save to SharedPreferences
                 val editor = sharedPreferences.edit()
                 editor.putString("agentId", agentId)
@@ -66,7 +66,14 @@ class SettingFragment : Fragment() {
                 editor.putString("serverUrl", serverUrl)
                 editor.apply()
 
+                editTextAgentId.setText("")
+                editTextPublicKey.setText("")
+                editTextServerUrl.setText("")
+
                 Toast.makeText(requireContext(), "Settings Saved!", Toast.LENGTH_SHORT).show()
+            }else {
+                Toast.makeText(requireContext(), "Invalid Url", Toast.LENGTH_SHORT).show()
+
             }
         }
     }

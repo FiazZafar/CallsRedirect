@@ -24,36 +24,30 @@
                 android:text="Date" />
 
             <TextView
-                android:id="@+id/tv_duration"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:textColor="@color/black"
-                android:text="Duration" />
-
-            <TextView
                 android:id="@+id/tv_durata"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:padding="8dp"
                 android:textColor="@color/black"
                 android:text="Durata" />
+            <TextView
+                android:id="@+id/tv_status"
+                android:layout_marginEnd="20dp"
+                android:layout_width="89dp"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:textColor="@color/black"
+                android:textAlignment="center"
+                android:text="Success"
+                android:background="@drawable/success_bg"/>
 
             <TextView
-                android:id="@+id/tv_timestamp"
+                android:id="@+id/tv_cost"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:padding="8dp"
                 android:textColor="@color/black"
-                android:text="Timestamp" />
-
-            <TextView
-                android:id="@+id/tv_status"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:textColor="@color/black"
-                android:text="Status" />
+                android:text="0.2 $" />
         </LinearLayout>
     </HorizontalScrollView>
 </LinearLayout>

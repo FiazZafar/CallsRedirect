@@ -14,9 +14,9 @@ class CallHistoryAdapter(private val callHistoryList: List<CallHistory>) :
     // ViewHolder class
     class CallHistoryViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvDate: TextView = view.findViewById(R.id.tv_date)
-        val tvDuration: TextView = view.findViewById(R.id.tv_duration)
+//        val tvDuration: TextView = view.findViewById(R.id.tv_duration)
         val tvDurata: TextView = view.findViewById(R.id.tv_durata)
-        val tvTimestamp: TextView = view.findViewById(R.id.tv_timestamp)
+//        val tvTimestamp: TextView = view.findViewById(R.id.tv_timestamp)
         val tvStatus: TextView = view.findViewById(R.id.tv_status)
     }
 
@@ -31,9 +31,9 @@ class CallHistoryAdapter(private val callHistoryList: List<CallHistory>) :
     override fun onBindViewHolder(holder: CallHistoryViewHolder, position: Int) {
         val item = callHistoryList[position]
         holder.tvDate.text = item.date
-        holder.tvDuration.text = item.duration
+//        holder.tvDuration.text = item.duration
         holder.tvDurata.text = item.durata
-        holder.tvTimestamp.text = item.timestamp
+//        holder.tvTimestamp.text = item.timestamp
         holder.tvStatus.text = item.status
     }
 

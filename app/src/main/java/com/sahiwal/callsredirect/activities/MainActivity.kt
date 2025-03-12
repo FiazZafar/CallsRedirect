@@ -13,6 +13,9 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -25,7 +28,9 @@ class MainActivity : AppCompatActivity() {
     private val permissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.USE_SIP,
-        Manifest.permission.INTERNET
+        Manifest.permission.INTERNET,
+        Manifest.permission.READ_PHONE_STATE, // Add for call detection
+        Manifest.permission.ANSWER_PHONE_CALLS // Add for auto-answer
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,13 +76,27 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 // Permissions granted, proceed with app logic
+                Log.d("MainActivity", "All permissions granted")
             } else {
                 // Permissions denied, show a message or disable functionality
+                showPermissionExplanation()
+                Log.e("MainActivity", "Permissions denied")
+                Toast.makeText(this, "Permissions are required for the app to function properly.", Toast.LENGTH_LONG).show()
             }
         }
     }
-
-
+    private fun showPermissionExplanation() {
+        AlertDialog.Builder(this)
+            .setTitle("Permissions Required")
+            .setMessage("This app needs phone and audio permissions to detect and answer calls.")
+            .setPositiveButton("OK") { _, _ ->
+                ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
     // Set up BottomNavigationView item selection
     private fun setupBottomNavigation() {
         bottomNavigationView.setOnNavigationItemSelectedListener { item ->

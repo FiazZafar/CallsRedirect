@@ -1,3 +1,4 @@
+
 package com.sahiwal.callsredirect.helpers
 
 import android.Manifest
@@ -7,7 +8,6 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.fiver.clientapp.dataclasses.IceCandidatePayload
 import com.fiver.clientapp.fragments.Offer
@@ -18,7 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.webrtc.*
 import org.webrtc.AudioTrack
-import java.nio.ByteBuffer
 
 class WebRTCManager(
     private val context: Context,
@@ -117,14 +116,18 @@ class WebRTCManager(
     }
 
     // Create and send an offer to MillisAI
-    fun createAndSendOffer() {
+    fun createAndSendOffer(currentMode: WebRTCMode) {
         Log.d("WebRTCManager", "Creating and sending offer...")
         peerConnection?.createOffer(object : SdpObserver {
             override fun onCreateSuccess(sessionDescription: SessionDescription) {
                 Log.d("WebRTC", "SDP Offer: ${sessionDescription.description}")
                 peerConnection?.setLocalDescription(object : SdpObserver {
                     override fun onSetSuccess() {
-                        sendOfferToMillis(sessionDescription)
+                        if (currentMode == WebRTCMode.TEST_AGENT) {
+                            sendOfferToMillis(sessionDescription, "TestAgent")
+                        } else {
+                            sendOfferToMillis(sessionDescription, "CallRedirect")
+                        }
                         Log.d("WebRTCManager", "Offer created and local description set")
                     }
 
@@ -147,7 +150,7 @@ class WebRTCManager(
     }
 
     // Send the offer to MillisAI
-    private fun sendOfferToMillis(offer: SessionDescription) {
+    private fun sendOfferToMillis(offer: SessionDescription, requestType: String) {
         offerSentTime = System.currentTimeMillis()
         val request = OfferRequest(
             agent_id = agentId,
@@ -157,7 +160,7 @@ class WebRTCManager(
             )
         )
         val authToken = "$privateKey"
-        Log.d("WebRTCManager", "Sending offer with authToken: $authToken")
+        Log.d("WebRTCManager", "Sending offer for $requestType with authToken: $authToken")
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = millisApiService.sendOffer(authToken, request)
@@ -203,7 +206,6 @@ class WebRTCManager(
         Log.d("WebRTCManager", "Handling ICE candidate...")
         peerConnection?.addIceCandidate(IceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.candidate))
     }
-
     // Clean up resources
     fun close() {
         Log.d("WebRTCManager", "Closing WebRTC manager...")
